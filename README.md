@@ -1,6 +1,9 @@
-Message perso avant le blabla bien IA : Ouai c'est bien vibecode a la mort, j'ai mis une partie sur les crédits des sprite mais ils sont de base généré par IA
+```
+Message perso avant le blabla bien IA : Ouai c'est bien vibecode a la mort, 
+J'ai mis une partie sur les crédits des sprite mais ils sont de base généré par IA
 Donc bon, c'est juste histoire de faire genre.
 Bonne journée.
+```
 
 ## 📂 Structure du projet
 
