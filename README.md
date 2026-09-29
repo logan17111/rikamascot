@@ -12,14 +12,22 @@ PS: Rika ou Kira je sais toujours pas, c'est pour ça qu'il ya des fichiers au d
 
 Compagnon de bureau IA multimodal (Vision + Mémoire contextuelle persistante) capable d'observer la fenêtre active, de réagir à ce que tu fais (code, lecture de manga, apprentissage du japonais sur le web, jeux) et de retenir tes préférences au fil de vos discussions.
 
-### 💬 Système de réponse & Mémoire auto-incrémentée
-Rika ne se contente pas de lancer des remarques aléatoires : **tu peux lui répondre directement** (via un raccourci clavier ou en cliquant sur elle) suite à sa dernière réplique ou pour lui expliquer ce qu'il y a sur ton écran. 
-
-À chaque fois que tu lui envoies un message, son « cerveau » fait deux choses simultanément :
-1. **Il te répond à la volée** en gardant en tête sa remarque précédente et le contexte de ta fenêtre active.
-2. **Il alimente tout seul sa base de mémoire (`kira_memory.json`) :** Si ton message contient une explication utile (ce qu'est tel site ou jeu, l'avancement d'un manga, un projet sur lequel tu bosses ou une info générale sur toi), l'IA rédige automatiquement une note de synthèse et y associe **1 à 3 mots-clés déclencheurs** (ou la définit en mémoire globale). La prochaine fois que tu ouvriras une fenêtre contenant l'un de ces mots-clés dans son titre, ce souvenir sera automatiquement réinjecté dans son prompt !
-
 Le projet fonctionne sur **Linux (Wayland / Niri)** via l'interface native d'**iNiR**, ainsi que sur **Windows** grâce à une réimplémentation graphique autonome en **PyQt6** (compatible multi-écrans).
+
+### 🎲 Fonctionnement des apparitions & Logique du « 50/50 »
+À intervalle régulier (toutes les 7 à 15 minutes par défaut), Rika analyse le titre de ta fenêtre active et prend une capture d'écran recadrée :
+1. **S'il se passe quelque chose d'intéressant** (texte japonais détecté à l'écran, code, jeu, erreur, site connu dans sa mémoire), elle apparaît pour réagir directement dessus ou t'expliquer un mot de vocabulaire japonais visible sur ta page.
+2. **Si l'écran est banal, vide ou répétitif :** Pour éviter d'être trop envahissante, le script tire à **pile ou face (1 chance sur 2)** :
+   * **50 % de chance qu'elle se taise :** Elle met `"should_speak": false` et n'apparaît pas du tout sur ce cycle.
+   * **50 % de chance qu'elle lance un sujet spontané :** Elle apparaît avec une anecdote, une astuce technique ou un point de japonais pioché aléatoirement dans ta liste `THEMES_INTERETS`.
+   *(Note : si tu l'appelles manuellement via son raccourci clavier, ce tirage est ignoré et elle te répond à 100 %).*
+
+### 💬 Système de réponse & Tri intelligent de la mémoire
+Tu peux répondre directement à Rika (via raccourci clavier ou en cliquant sur elle) suite à sa dernière réplique ou pour lui expliquer ce qu'il y a sur ton écran. À chaque message envoyé, elle te répond à la volée et décide toute seule comment classer l'information dans `kira_memory.json` :
+
+* **🪟 Mémoire liée à une fenêtre (`is_global: false`) :** Si tu lui expliques ce qu'est un site précis, un jeu, l'avancement d'un manga ou un projet en cours, elle résume l'info et génère **1 à 3 mots-clés déclencheurs** (`keywords`). Ce souvenir ne sera injecté dans son prompt que lorsque tu auras une fenêtre active contenant l'un de ces mots-clés dans son titre.
+* **🌍 Mémoire globale (`is_global: true`) :** Si tu lui confies une information générale sur toi ou tes goûts qui n'est pas liée à une application particulière, elle l'enregistre sans mot-clé (`keywords: []`). Cette note sera **toujours** envoyée à Rika, peu importe ta fenêtre active.
+* **🗑️ Information ignorée (`should_memorize: false`) :** Si ton message est une simple blague, un salut ou une remarque qui n'a pas d'intérêt à être retenue pour le futur, elle te répondra naturellement mais **n'enregistrera rien** dans le fichier JSON pour ne pas polluer sa mémoire.
 
 ---
 
