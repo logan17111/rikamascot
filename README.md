@@ -1,12 +1,3 @@
-Voici un fichier `README.md` complet prêt à être collé à la racine de ton dépôt `MascotRika`. Il regroupe la procédure de clonage, le fichier `token`, les variables à personnaliser (`USER_NAME`, `MODEL`, `API_URL`, `MIN_COOLDOWN`, `MAX_COOLDOWN`, `THEMES_INTERETS`, `BLACKLIST_KEYWORDS`), les instructions séparées pour **Linux** (avec la dépendance obligatoire à **iNiR** et **Niri**) et **Windows** (version autonome en **PyQt6**), la présentation du **Memory Viewer**, ainsi que la mention de propriété intellectuelle pour les sprites d'**iNiR**.
-
-```markdown
-# 🦊 MascotRika (Kira Companion)
-
-Compagnon de bureau IA multimodal (Vision + Mémoire contextuelle persistante) capable d'observer la fenêtre active, de réagir à ce que tu fais (code, lecture de manga, apprentissage du japonais sur le web, jeux) et de retenir tes préférences au fil de vos discussions.
-
-Le projet fonctionne sur **Linux (Wayland / Niri)** via l'interface native d'**iNiR**, ainsi que sur **Windows** grâce à une réimplémentation graphique autonome en **PyQt6** (compatible multi-écrans).
-
 ---
 
 ## 📂 Structure du projet
