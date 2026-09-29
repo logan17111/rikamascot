@@ -1,3 +1,7 @@
+Message perso avant le blabla bien IA : Ouai c'est bien vibecode a la mort, j'ai mis une partie sur les crédits des sprite mais ils sont de base généré par IA
+Donc bon, c'est juste histoire de faire genre.
+Bonne journée.
+
 ## 📂 Structure du projet
 
 ```text
@@ -201,7 +205,3 @@ L'intégralité des illustrations, sprites et animations composant la mascotte (
 Ce dépôt (`MascotRika`) est un projet personnel et communautaire ajoutant une couche d'intelligence artificielle (LLM + Vision + Mémoire) et un portage PyQt6 pour Windows. Je ne revendique aucun droit d'auteur sur les œuvres graphiques de la mascotte.
 * **Usage :**
 Le code Python de ce dépôt est partagé à titre éducatif et personnel (open-source). Les images et ressources graphiques associées restent soumises aux droits et à la licence de leurs créateurs respectifs au sein du projet **iNiR**. Si vous êtes l'auteur original des visuels et souhaitez leur retrait de ce dépôt au profit d'un script de téléchargement externe, n'hésitez pas à ouvrir une *Issue*.
-
-```
-
-```
