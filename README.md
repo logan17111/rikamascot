@@ -3,6 +3,9 @@ Message perso avant le blabla bien IA : Ouai c'est bien vibecode a la mort,
 J'ai mis une partie sur les crédits des sprite mais ils sont de base généré par IA
 Donc bon, c'est juste histoire de faire genre.
 Bonne journée.
+
+PS: Rika ou Kira je sais toujours pas, c'est pour ça qu'il ya des fichiers au deux noms,
+    un jour je me déciderais
 ```
 
 # 🦊 MascotRika (Kira Companion)
