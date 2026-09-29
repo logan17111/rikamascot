@@ -1,5 +1,3 @@
----
-
 ## 📂 Structure du projet
 
 ```text
