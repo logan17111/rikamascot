@@ -1,13 +1,32 @@
 #!/usr/bin/env python3
 import base64
 import io
+import json
 import subprocess
-from PIL import Image, ImageChops, ImageFilter
+from PIL import Image, ImageFilter
+
+
+def get_focused_output() -> str:
+    try:
+        res = subprocess.run(
+            ["niri", "msg", "-j", "focused-output"],
+            capture_output=True,
+            text=True,
+            timeout=2
+        )
+        if res.returncode == 0 and res.stdout:
+            data = json.loads(res.stdout)
+            return data.get("name", "")
+    except Exception:
+        pass
+    return ""
 
 
 def get_smart_crop_b64(app_id: str = "", title: str = "") -> str:
-    # 1. Capture brute en RAM
-    res = subprocess.run(["grim", "-t", "png", "-"], capture_output=True, timeout=5)
+    # 1. Capture brute en RAM (uniquement sur l'écran actif si détecté)
+    output = get_focused_output()
+    cmd = ["grim", "-o", output, "-t", "png", "-"] if output else ["grim", "-t", "png", "-"]
+    res = subprocess.run(cmd, capture_output=True, timeout=5)
     if res.returncode != 0 or not res.stdout:
         return ""
 
@@ -17,19 +36,15 @@ def get_smart_crop_b64(app_id: str = "", title: str = "") -> str:
 
     # 2. Découpage intelligent selon ce que tu fais
     if any(k in context for k in ["twitter", " / x", "x.com", "reddit"]):
-        # Garde uniquement la colonne centrale (le post que tu lis) sans les menus ni la barre d'onglets
         crop_box = (int(w * 0.28), int(h * 0.12), int(w * 0.68), int(h * 0.88))
         img = img.crop(crop_box)
 
     elif any(k in context for k in ["manga", "komga", "mangadex", "lecteur"]):
-        # Coupe les barres du navigateur et les bords latéraux pour zoomer sur la planche
         crop_box = (int(w * 0.18), int(h * 0.08), int(w * 0.82), int(h * 0.95))
         img = img.crop(crop_box)
 
     else:
-        # Détection automatique de la zone active (bords/contraste) en retirant la barre du haut et des bords
         base_crop = img.crop((int(w * 0.05), int(h * 0.06), int(w * 0.95), int(h * 0.94)))
-        # Trouve la zone qui contient le plus de détails (texte/code) via détection de contours
         edges = base_crop.convert("L").filter(ImageFilter.FIND_EDGES)
         bbox = edges.point(lambda p: 255 if p > 40 else 0).getbbox()
         if bbox:
