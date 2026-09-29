@@ -35,7 +35,7 @@ from PyQt6.QtWidgets import (
 
 # --- CONFIGURATION À PERSONNALISER ---
 USER_NAME = "Utilisateur"  # Ton prénom ou pseudo
-MODEL = "vertex/gemini-2.5-flash-lite@europe-west1"
+MODEL = "vertex/gemini-2.5-flash@europe-west1"
 API_URL = "https://router.requesty.ai/v1/chat/completions"
 
 MIN_COOLDOWN = 7 * 60
