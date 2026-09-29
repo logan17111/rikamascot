@@ -9,6 +9,13 @@ Bonne journée.
 
 Compagnon de bureau IA multimodal (Vision + Mémoire contextuelle persistante) capable d'observer la fenêtre active, de réagir à ce que tu fais (code, lecture de manga, apprentissage du japonais sur le web, jeux) et de retenir tes préférences au fil de vos discussions.
 
+### 💬 Système de réponse & Mémoire auto-incrémentée
+Rika ne se contente pas de lancer des remarques aléatoires : **tu peux lui répondre directement** (via un raccourci clavier ou en cliquant sur elle) suite à sa dernière réplique ou pour lui expliquer ce qu'il y a sur ton écran. 
+
+À chaque fois que tu lui envoies un message, son « cerveau » fait deux choses simultanément :
+1. **Il te répond à la volée** en gardant en tête sa remarque précédente et le contexte de ta fenêtre active.
+2. **Il alimente tout seul sa base de mémoire (`kira_memory.json`) :** Si ton message contient une explication utile (ce qu'est tel site ou jeu, l'avancement d'un manga, un projet sur lequel tu bosses ou une info générale sur toi), l'IA rédige automatiquement une note de synthèse et y associe **1 à 3 mots-clés déclencheurs** (ou la définit en mémoire globale). La prochaine fois que tu ouvriras une fenêtre contenant l'un de ces mots-clés dans son titre, ce souvenir sera automatiquement réinjecté dans son prompt !
+
 Le projet fonctionne sur **Linux (Wayland / Niri)** via l'interface native d'**iNiR**, ainsi que sur **Windows** grâce à une réimplémentation graphique autonome en **PyQt6** (compatible multi-écrans).
 
 ---
