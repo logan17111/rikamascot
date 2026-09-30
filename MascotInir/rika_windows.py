@@ -40,6 +40,7 @@ API_URL = "https://router.requesty.ai/v1/chat/completions"
 
 MIN_COOLDOWN = 7 * 60
 MAX_COOLDOWN = 15 * 60
+IDLE_TIMEOUT = 5 * 60  # 5 minutes sans activité clavier/souris = pause automatique
 
 # --- CHEMINS ---
 PROJECT_DIR = Path(__file__).resolve().parent
@@ -80,7 +81,15 @@ for f in MASCOT_DIR.glob("inir-mascot-*"):
 POSES = sorted(SPRITE_MAP.keys()) or ["smug-hand-raised", "tired-dev", "reading", "thinking-pose"]
 
 
-# --- FENÊTRE ACTIVE, MULTI-ÉCRANS & SMART CAPTURE WINDOWS ---
+# --- FENÊTRE ACTIVE, INACTIVITÉ, MULTI-ÉCRANS & SMART CAPTURE WINDOWS ---
+def is_user_idle() -> bool:
+    try:
+        idle_ms = (win32api.GetTickCount() - win32api.GetLastInputInfo()) & 0xFFFFFFFF
+        return (idle_ms / 1000.0) >= IDLE_TIMEOUT
+    except Exception:
+        return False
+
+
 def get_active_screen_geometry():
     try:
         hwnd = win32gui.GetForegroundWindow()
@@ -463,7 +472,8 @@ Réponds UNIQUEMENT en JSON brut :
 
 
 def trigger_once(overlay: MascotOverlay, force: bool = False):
-    if not force and overlay.isVisible():
+    if not force and (overlay.isVisible() or is_user_idle()):
+        print("[Idle/Busy] Utilisateur inactif ou Rika déjà affichée, cycle ignoré.")
         return
 
     win = get_active_window()
