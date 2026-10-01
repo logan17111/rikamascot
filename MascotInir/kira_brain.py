@@ -100,12 +100,12 @@ def get_relevant_memories(app_id: str, title: str) -> list[str]:
     return relevant
 
 
-def save_last_context(app_id: str, title: str, line: str):
+def save_last_context(app_id: str, title: str, history: list):
     data = {
         "timestamp": time.time(),
         "app_id": app_id,
         "title": title,
-        "last_line": line
+        "history": history
     }
     try:
         LAST_CTX_FILE.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
@@ -126,7 +126,7 @@ def load_last_context() -> dict:
         "timestamp": time.time(),
         "app_id": win.get("app_id", "inconnu"),
         "title": win.get("title", "Bureau"),
-        "last_line": f"(Aucune remarque récente, {USER_NAME} te parle spontanément)"
+        "history": []
     }
 
 
@@ -286,7 +286,8 @@ def trigger_once(force: bool = False):
         print(f"[Debug IA | ForceFact={force_fact} | Mem={len(memories)}] {decision}")
         if decision.get("should_speak", False) or force:
             line = decision.get("line", "...")
-            save_last_context(app_id, title, line)
+            # On réinitialise l'historique lors d'une nouvelle apparition
+            save_last_context(app_id, title, [{"role": "rika", "content": line}])
             show_mascot(decision.get("pose", "smug-hand-raised"), decision.get("edge", "bottom"), line)
     except Exception as e:
         print(f"[Erreur] {e}", file=sys.stderr)
@@ -315,21 +316,38 @@ def ask_user_reply_gui(last_line: str) -> str:
 
 def handle_reply(user_msg: str = ""):
     last_ctx = load_last_context()
+    history = last_ctx.get("history", [])
+
     if not user_msg:
-        user_msg = ask_user_reply_gui(last_ctx.get("last_line", ""))
+        last_line = ""
+        for msg in reversed(history):
+            if msg["role"] == "rika":
+                last_line = msg["content"]
+                break
+        if not last_line:
+            last_line = f"(Aucune remarque récente, {USER_NAME} lance la discussion)"
+            
+        user_msg = ask_user_reply_gui(last_line)
+        
     if not user_msg:
         return
 
     app_id = last_ctx.get("app_id", "inconnu")
     title = last_ctx.get("title", "Bureau")
-    last_line = last_ctx.get("last_line", "")
+
+    history.append({"role": "user", "content": user_msg})
+
+    transcript = ""
+    for msg in history:
+        speaker = "Rika" if msg["role"] == "rika" else USER_NAME
+        transcript += f"{speaker} : « {msg['content']} »\n"
 
     sys_prompt = f"""Tu es Rika (Kira), la mascotte pixel-art sur le bureau Linux de {USER_NAME}.
-{USER_NAME} vient de te répondre suite à ta dernière apparition (ou pour t'apprendre quelque chose sur sa fenêtre actuelle).
+Vous êtes en pleine discussion. Voici l'historique récent de votre échange.
 
 Ta mission est double :
-1. Lui répondre directement avec ton caractère vif, complice et familier (15 à 35 mots max, tutoiement, sans backticks).
-2. Déterminer si son message contient une explication utile à retenir pour le futur (ex: expliquer ce qu'est un site/jeu comme Wiki Master, un projet, une habitude ou une préférence).
+1. Poursuivre la conversation naturellement avec ton caractère vif, complice et familier (15 à 35 mots max, tutoiement, sans backticks).
+2. Déterminer si le dernier message de {USER_NAME} contient une explication utile à retenir pour le futur (ex: expliquer ce qu'est un site/jeu comme Wiki Master, un projet, une habitude ou une préférence).
    - Si OUI : mets "should_memorize": true, rédige une "memory_note" claire et concise à la 3e personne, et extrais 1 à 3 "keywords" en minuscules (le nom du site, du jeu ou de l'outil visible dans le titre de la fenêtre ou son message, SANS ".com"/".fr"). Si c'est une info générale sur {USER_NAME} non liée à une fenêtre précise, mets "is_global": true et "keywords": [].
    - Si NON (simple blague ou salut) : mets "should_memorize": false.
 
@@ -337,7 +355,7 @@ Réponds UNIQUEMENT en JSON brut (sans ```json) :
 {{
   "pose": "choisie parmi : {', '.join(POSES)}",
   "edge": "bottom, right, left ou top",
-  "line": "Ta réponse immédiate à {USER_NAME}",
+  "line": "Ta réponse pour continuer la discussion",
   "should_memorize": true,
   "is_global": false,
   "keywords": ["mot-cle-1"],
@@ -346,8 +364,8 @@ Réponds UNIQUEMENT en JSON brut (sans ```json) :
 
     user_prompt = (
         f"Fenêtre concernée : {app_id} | Titre : {title}\n"
-        f"Ce que tu venais de lui dire : « {last_line} »\n"
-        f"Réponse de {USER_NAME} : « {user_msg} »"
+        f"--- Historique de la discussion ---\n"
+        f"{transcript}"
     )
 
     try:
@@ -365,7 +383,9 @@ Réponds UNIQUEMENT en JSON brut (sans ```json) :
             print(f"[Mémoire enregistrée] {res.get('keywords')} -> {res.get('memory_note')}")
 
         reply_line = res.get("line", "C'est noté !")
-        save_last_context(app_id, title, reply_line)
+        history.append({"role": "rika", "content": reply_line})
+        save_last_context(app_id, title, history)
+        
         show_mascot(res.get("pose", "thinking-pose"), res.get("edge", "bottom"), reply_line)
     except Exception as e:
         print(f"[Erreur Reply] {e}", file=sys.stderr)
@@ -381,7 +401,7 @@ if __name__ == "__main__":
     elif "--once" in sys.argv:
         trigger_once(force=True)
     else:
-        print("Démon Rika/Kira v3 (avec mémoire) démarré...")
+        print("Démon Rika/Kira v3 (avec mémoire et historique) démarré...")
         while True:
             wait_time = random.randint(MIN_COOLDOWN, MAX_COOLDOWN)
             print(f"[Timer] Prochaine vérification dans {wait_time // 60}m{wait_time % 60:02d}s")

@@ -190,13 +190,13 @@ def get_relevant_memories(app_id: str, title: str) -> list[str]:
     return relevant
 
 
-def save_last_context(app_id: str, title: str, line: str):
+def save_last_context(app_id: str, title: str, history: list):
     try:
         LAST_CTX_FILE.write_text(json.dumps({
             "timestamp": time.time(),
             "app_id": app_id,
             "title": title,
-            "last_line": line
+            "history": history
         }, ensure_ascii=False), encoding="utf-8")
     except Exception:
         pass
@@ -215,7 +215,7 @@ def load_last_context() -> dict:
         "timestamp": time.time(),
         "app_id": win.get("app_id", "inconnu"),
         "title": win.get("title", "Bureau"),
-        "last_line": f"(Aucune remarque récente, {USER_NAME} te parle spontanément)"
+        "history": []
     }
 
 
@@ -429,7 +429,16 @@ class MascotOverlay(QWidget):
             self.hide_timer.start(60000)
 
         last_ctx = load_last_context()
-        dlg = ReplyDialog(last_ctx.get("last_line", ""))
+        history = last_ctx.get("history", [])
+        last_line = ""
+        for msg in reversed(history):
+            if msg["role"] == "rika":
+                last_line = msg["content"]
+                break
+        if not last_line:
+            last_line = f"(Aucune remarque récente, {USER_NAME} lance la discussion)"
+
+        dlg = ReplyDialog(last_line)
         if dlg.exec() == QDialog.DialogCode.Accepted:
             text = dlg.input.text().strip()
             if text:
@@ -506,7 +515,8 @@ def trigger_once(overlay: MascotOverlay, force: bool = False):
         print(f"[Debug IA | Force={force} | Mem={len(memories)}] {decision}")
         if decision.get("should_speak", False) or force:
             line = decision.get("line", "...")
-            save_last_context(app_id, title, line)
+            # On réinitialise l'historique lors d'une nouvelle apparition naturelle ou forcée
+            save_last_context(app_id, title, [{"role": "rika", "content": line}])
             overlay.show_signal.emit(
                 decision.get("pose", "smug-hand-raised"),
                 decision.get("edge", "bottom"),
@@ -520,32 +530,39 @@ def process_reply(user_msg: str, overlay: MascotOverlay):
     last_ctx = load_last_context()
     app_id = last_ctx.get("app_id", "inconnu")
     title = last_ctx.get("title", "Bureau")
-    last_line = last_ctx.get("last_line", "")
+    history = last_ctx.get("history", [])
+
+    history.append({"role": "user", "content": user_msg})
+
+    transcript = ""
+    for msg in history:
+        speaker = "Rika" if msg["role"] == "rika" else USER_NAME
+        transcript += f"{speaker} : « {msg['content']} »\n"
 
     sys_prompt = f"""Tu es Rika (Kira), la mascotte pixel-art sur le PC de {USER_NAME}.
-{USER_NAME} vient de te répondre suite à ta dernière apparition.
+Vous êtes en pleine discussion. Voici l'historique récent de votre échange.
 
 Ta mission :
-1. Lui répondre directement avec ton caractère vif, complice et familier (15 à 35 mots max, tutoiement, sans guillemets doubles internes).
-2. Déterminer si son message contient une explication utile à retenir pour le futur (site, jeu comme Wiki Master, manga, projet, préférence).
-   - Si OUI : mets "should_memorize": true, rédige une "memory_note" concise, et extrais 1 à 3 "keywords" en minuscules (SANS ".com"/".fr" et SANS le nom générique du navigateur ou plateforme comme firefox, chrome, mangadex, youtube si la note porte sur une oeuvre précise). Si c'est une info générale sur {USER_NAME}, mets "is_global": true et "keywords": [].
-   - Si NON (simple blague/compliment) : mets "should_memorize": false.
+1. Poursuivre la conversation naturellement avec ton caractère vif, complice et familier (15 à 35 mots max, tutoiement, sans guillemets doubles internes).
+2. Déterminer si le message de {USER_NAME} contient une explication utile à retenir pour le futur (site, jeu, manga, projet, préférence).
+   - Si OUI : mets "should_memorize": true, rédige une "memory_note" concise, et extrais 1 à 3 "keywords" en minuscules (SANS ".com"/".fr"). Si c'est une info générale sur {USER_NAME}, mets "is_global": true et "keywords": [].
+   - Si NON : mets "should_memorize": false.
 
 Réponds UNIQUEMENT en JSON brut :
 {{
   "pose": "choisie parmi : {', '.join(POSES)}",
   "edge": "bottom",
-  "line": "Ta réponse immédiate à {USER_NAME}",
+  "line": "Ta réponse pour continuer la discussion",
   "should_memorize": true,
   "is_global": false,
   "keywords": ["mot-cle"],
-  "memory_note": "Résumé à retenir"
+  "memory_note": "Résumé à retenir (optionnel)"
 }}"""
 
     user_prompt = (
         f"Fenêtre concernée : {app_id} | Titre : {title}\n"
-        f"Ce que tu venais de lui dire : « {last_line} »\n"
-        f"Réponse de {USER_NAME} : « {user_msg} »"
+        f"--- Historique de la discussion ---\n"
+        f"{transcript}"
     )
 
     try:
@@ -554,7 +571,10 @@ Réponds UNIQUEMENT en JSON brut :
         if res.get("should_memorize") and res.get("memory_note"):
             save_memory_entry(res.get("keywords", []), res["memory_note"], res.get("is_global", False))
         reply_line = res.get("line", "C'est noté !")
-        save_last_context(app_id, title, reply_line)
+        
+        history.append({"role": "rika", "content": reply_line})
+        save_last_context(app_id, title, history)
+        
         overlay.show_signal.emit(res.get("pose", "thinking-pose"), res.get("edge", "bottom"), reply_line)
     except Exception as e:
         print(f"[Erreur Reply] {e}")
